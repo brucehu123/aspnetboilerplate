@@ -16,9 +16,12 @@ using JetBrains.Annotations;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ApplicationParts;
 using Microsoft.AspNetCore.Mvc.Razor;
+using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.Mvc.RazorPages.Infrastructure;
 using Microsoft.AspNetCore.Mvc.ViewComponents;
 using Microsoft.AspNetCore.Mvc.ViewFeatures.Internal;
 using Microsoft.Extensions.Options;
+using Newtonsoft.Json.Serialization;
 
 namespace Abp.AspNetCore
 {
@@ -49,6 +52,9 @@ namespace Abp.AspNetCore
             //Use DI to create controllers
             services.Replace(ServiceDescriptor.Transient<IControllerActivator, ServiceBasedControllerActivator>());
 
+            //Use DI to create page models
+            services.Replace(ServiceDescriptor.Singleton<IPageModelActivatorProvider, ServiceBasedPageModelActivatorProvider>());
+
             //Use DI to create view components
             services.Replace(ServiceDescriptor.Singleton<IViewComponentActivator, ServiceBasedViewComponentActivator>());
 
@@ -63,7 +69,10 @@ namespace Abp.AspNetCore
             //Configure JSON serializer
             services.Configure<MvcJsonOptions>(jsonOptions =>
             {
-                jsonOptions.SerializerSettings.Converters.Insert(0, new AbpDateTimeConverter());
+                jsonOptions.SerializerSettings.ContractResolver = new AbpMvcContractResolver(iocResolver)
+                {
+                    NamingStrategy = new CamelCaseNamingStrategy()
+                };
             });
 
             //Configure MVC
